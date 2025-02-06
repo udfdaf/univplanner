@@ -48,3 +48,5 @@ Plan (계획)
 GitHub: [(https://github.com/udfdaf/univplanner)]
 
 UnivPlanner - 대학생활, 이제는 체계적으로! 🎉
+![Untitled](https://github.com/user-attachments/assets/9a4e5337-3e46-4e22-850a-7062b7bf89e2)
+
