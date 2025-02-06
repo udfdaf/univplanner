@@ -31,6 +31,8 @@
             public String signup() {
                 return "signup";
             }
+
+            @PostMapping("/register")
             public String register(@Valid @ModelAttribute UserDto userDto, RedirectAttributes redirectAttributes) {
                 try {
                     userService.registerUser(userDto);
@@ -40,24 +42,5 @@
                     redirectAttributes.addFlashAttribute("error", e.getMessage());
                     return "redirect:/signup";
                 }
-            }
-            @PostMapping("/login")
-            public String loginProcess(UserDto userDto, RedirectAttributes redirectAttributes) {
-                try {
-                    boolean loginSuccess = userService.loginUser(userDto);
-                    if (loginSuccess) {
-                        return "redirect:/plans";
-                    } else {
-                        throw new CustomException(ErrorCode.LOGIN_FAILED);
-                    }
-                } catch (CustomException e) {
-                    redirectAttributes.addFlashAttribute("error", e.getMessage());
-                    return "redirect:/login";
-                }
-            }
-            @GetMapping("/users/{username}")
-            @ResponseBody
-            public User getUserByUsername(@PathVariable String username) {
-                return userService.getUserByUsername(username);
             }
         }

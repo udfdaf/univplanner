@@ -1,15 +1,184 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Plan List</title>
+    <title>시간표 목록</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 70%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+
+        .btn-manage {
+            background-color: #28a745;
+            text-decoration: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .btn-manage:hover {
+            background-color: #218838;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
 </head>
 <body>
-<h1>Plan List</h1>
-<ul>
-    <li th:each="plan : ${plans}">
-        <span th:text="${plan.name}"></span>
-    </li>
-</ul>
-<a href="/courses/list">View Courses</a>
+<div class="container">
+    <h2>시간표 목록</h2>
+    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+
+    <form id="planForm" class="form-group">
+        <input type="text" id="planName" placeholder="시간표 이름을 입력하세요" required>
+        <button type="submit" class="btn">새 시간표 만들기</button>
+    </form>
+
+    <table>
+        <thead>
+        <tr>
+            <th>시간표 이름</th>
+            <th>작업</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="plan : ${plans}">
+            <td th:text="${plan.name}"></td>
+            <td class="action-buttons">
+                <a th:href="@{/courses/plan/{id}(id=${plan.id})}" class="btn-manage">강의 관리</a>
+                <button class="btn btn-delete" th:onclick="'deletePlan(' + ${plan.id} + ')'">삭제</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('planForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const planData = {
+            name: document.getElementById('planName').value
+        };
+
+        fetch('/plans/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(planData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                } else {
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('시간표 생성 중 오류가 발생했습니다.');
+            });
+    });
+
+    function deletePlan(planId) {
+        if (!confirm('정말 삭제하시겠습니까?')) return;
+
+        fetch(`/plans/${planId}`, {
+            method: 'DELETE'
+        })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('삭제 중 오류가 발생했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('삭제 중 오류가 발생했습니다.');
+            });
+    }
+</script>
 </body>
 </html>

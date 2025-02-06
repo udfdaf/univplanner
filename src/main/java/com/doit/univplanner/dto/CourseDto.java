@@ -10,6 +10,7 @@ import lombok.Data;
 
 @Data
 public class CourseDto {
+    private Long id;
     @NotBlank(message = "강의명은 필수입니다.")
     private String name;
 
@@ -56,4 +57,19 @@ public class CourseDto {
         course.setPlan(plan);
         return course;
     }
+    public static CourseDto toDto(Course course) {
+        CourseDto dto = new CourseDto();
+        dto.setId(course.getId());
+        dto.setName(course.getName());
+        dto.setMileage(course.getMileage());
+        dto.setDayOfWeek(course.getDayOfWeek());
+        dto.setStartPeriod(course.getStartPeriod());
+        dto.setEndPeriod(course.getEndPeriod());
+        dto.setType(course.getType());
+        dto.setProfessor(course.getProfessor());
+        dto.setCredits(course.getCredits());
+        dto.setPlanId(course.getPlan().getId());
+        return dto;
+    }
+
 }

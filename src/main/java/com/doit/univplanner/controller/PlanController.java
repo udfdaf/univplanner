@@ -3,42 +3,57 @@ package com.doit.univplanner.controller;
 import com.doit.univplanner.dto.PlanDto;
 import com.doit.univplanner.entity.Plan;
 import com.doit.univplanner.entity.User;
+import com.doit.univplanner.exception.CustomException;
+import com.doit.univplanner.exception.ErrorResponse;
 import com.doit.univplanner.service.PlanService;
 import com.doit.univplanner.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
 
-@RestController
+@Controller
 @RequestMapping("/plans")
 public class PlanController {
-
     @Autowired
     private PlanService planService;
 
-    @Autowired
-    private UserService userService;
     @GetMapping("/list")
-
-    public String planList(Model model) {
-        List<Plan> plans = planService.getAllPlans();
+    public String planList(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+        List<PlanDto> plans = planService.getPlansByUsername(userDetails.getUsername());
         model.addAttribute("plans", plans);
         return "plan-list";
     }
 
-    @PostMapping("/create")
-    public Plan createPlan(@Valid @RequestBody PlanDto planDto, @RequestParam String username) {
-        User user = userService.getUserByUsername(username);
-        return planService.createPlan(planDto, username);
+    @GetMapping("/new")
+    public String newPlanForm(Model model) {
+        model.addAttribute("planDto", new PlanDto());
+        return "plan-form";
     }
 
-    @GetMapping("/{username}")
-    public List<Plan> getPlansByUser(@PathVariable String username) {
-        User user = userService.getUserByUsername(username);
-        return planService.getPlansByUserId(user.getId());
+    @PostMapping("/create")
+    @ResponseBody
+    public ResponseEntity<?> createPlan(@Valid @RequestBody PlanDto planDto,
+                                        @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            PlanDto createdPlan = planService.createPlan(planDto, userDetails.getUsername());
+            return ResponseEntity.ok(createdPlan);
+        } catch (CustomException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    public ResponseEntity<?> deletePlan(@PathVariable Long id,
+                                        @AuthenticationPrincipal UserDetails userDetails) {
+        planService.deletePlan(id, userDetails.getUsername());
+        return ResponseEntity.ok().build();
     }
 }
-

@@ -10,7 +10,8 @@ public enum ErrorCode {
     INVALID_PLAN("잘못된 계획 정보입니다."),
     COURSE_TIME_CONFLICT("강의 시간이 중복됩니다."),
     INVALID_COURSE("잘못된 강의 정보입니다."),
-    LOGIN_FAILED("아이디 또는 비밀번호가 맞지 않습니다.");
+    LOGIN_FAILED("아이디 또는 비밀번호가 맞지 않습니다."),
+    CREDITS_EXCEEDED("수강 가능한 최대 학점을 초과했습니다.");
 
     private final String message;
 

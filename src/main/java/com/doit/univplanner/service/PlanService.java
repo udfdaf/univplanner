@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PlanService {
@@ -21,24 +22,35 @@ public class PlanService {
     @Autowired
     private UserService userService;
 
+
     @Transactional
-    public Plan createPlan(PlanDto planDto, String username) {
+    public PlanDto createPlan(PlanDto planDto, String username) {
         User user = userService.getUserByUsername(username);
-
-        // userId와 실제 사용자의 id가 일치하는지 검증
-        if (!user.getId().toString().equals(planDto.getUserId())) {
-            throw new CustomException(ErrorCode.INVALID_PLAN);
-        }
-
         Plan plan = planDto.toEntity(user);
-        return planRepository.save(plan);
-    }
-    public List<Plan> getAllPlans() {
-        return planRepository.findAll();
+        Plan savedPlan = planRepository.save(plan);
+        return PlanDto.from(savedPlan);
     }
 
     @Transactional(readOnly = true)
-    public List<Plan> getPlansByUserId(Long userId) {
-        return planRepository.findByUserId(userId);
+    public List<PlanDto> getPlansByUsername(String username) {
+        User user = userService.getUserByUsername(username);
+        return planRepository.findByUserId(user.getId())
+                .stream()
+                .map(PlanDto::from)
+                .collect(Collectors.toList());
     }
+
+    @Transactional
+    public void deletePlan(Long planId, String username) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_PLAN));
+
+        // 현재 사용자의 Plan인지 확인
+        if (!plan.getUser().getUsername().equals(username)) {
+            throw new CustomException(ErrorCode.INVALID_PLAN);
+        }
+
+        planRepository.delete(plan);
+    }
+
 }

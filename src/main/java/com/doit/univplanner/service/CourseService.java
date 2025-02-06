@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CourseService {
@@ -22,35 +23,56 @@ public class CourseService {
     private PlanRepository planRepository;
 
     @Transactional
-    public Course addCourse(CourseDto courseDto) {
+    public CourseDto addCourse(CourseDto courseDto) {
+        // 1. Plan 존재 여부 확인
         Plan plan = planRepository.findById(courseDto.getPlanId())
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_PLAN));
 
+        // 2. 유효성 검사
         validateCourse(courseDto, plan.getId());
 
-        Course course = courseDto.toEntity(plan);
-        return courseRepository.save(course);
+        try {
+            // 3. Entity 변환 및 저장
+            Course course = courseDto.toEntity(plan);
+            Course savedCourse = courseRepository.save(course);
+            return CourseDto.toDto(savedCourse);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.INVALID_COURSE);
+        }
     }
-    public List<Course> getAllCourses() {
-        return courseRepository.findAll();
-    }
+
     @Transactional(readOnly = true)
-    public List<Course> getCoursesByPlanId(Long planId) {
-        return courseRepository.findByPlanId(planId);
+    public List<CourseDto> getCoursesByPlanId(Long planId) {
+        // Plan 존재 여부 먼저 확인
+        if (!planRepository.existsById(planId)) {
+            throw new CustomException(ErrorCode.INVALID_PLAN);
+        }
+
+        return courseRepository.findByPlanId(planId)
+                .stream()
+                .map(CourseDto::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteCourse(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_COURSE));
+        courseRepository.delete(course);
     }
 
     private void validateCourse(CourseDto courseDto, Long planId) {
-        // 시간표 중복 체크
-        if (hasTimeConflict(courseDto, planId)) {
-            throw new CustomException(ErrorCode.COURSE_TIME_CONFLICT);
-        }
-
-        // 종료 시간이 시작 시간보다 늦은지 확인
+        // 1. 종료 시간이 시작 시간보다 늦은지 확인
         if (courseDto.getEndPeriod() < courseDto.getStartPeriod()) {
             throw new CustomException(ErrorCode.INVALID_COURSE);
         }
 
-        // 추가적인 유효성 검사 (예: 최대 학점 체크 등)
+        // 2. 시간표 중복 체크
+        if (hasTimeConflict(courseDto, planId)) {
+            throw new CustomException(ErrorCode.COURSE_TIME_CONFLICT);
+        }
+
+        // 3. 학점 제한 체크
         validateCreditsLimit(planId, courseDto.getCredits());
     }
 
@@ -59,22 +81,20 @@ public class CourseService {
 
         return existingCourses.stream().anyMatch(existing ->
                 existing.getDayOfWeek().equals(newCourse.getDayOfWeek()) &&
-                        ((newCourse.getStartPeriod() >= existing.getStartPeriod() &&
-                                newCourse.getStartPeriod() <= existing.getEndPeriod()) ||
-                                (newCourse.getEndPeriod() >= existing.getStartPeriod() &&
-                                        newCourse.getEndPeriod() <= existing.getEndPeriod()))
+                        // 시간 중복 검사 로직 수정
+                        // 한 교시가 겹치는 경우는 허용 (예: 1-3교시와 3-5교시)
+                        (newCourse.getStartPeriod() < existing.getEndPeriod() &&
+                                newCourse.getEndPeriod() > existing.getStartPeriod())
         );
     }
-
     private void validateCreditsLimit(Long planId, int newCredits) {
         List<Course> existingCourses = courseRepository.findByPlanId(planId);
         int totalCredits = existingCourses.stream()
                 .mapToInt(Course::getCredits)
                 .sum() + newCredits;
 
-        // 예시: 최대 21학점
         if (totalCredits > 21) {
-            throw new CustomException(ErrorCode.INVALID_COURSE);
+            throw new CustomException(ErrorCode.CREDITS_EXCEEDED);  // 새로운 에러 코드 필요
         }
     }
 }
