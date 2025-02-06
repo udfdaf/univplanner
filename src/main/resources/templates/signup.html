@@ -1,0 +1,22 @@
+  <!DOCTYPE html>
+  <html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+  </head>
+  <body>
+  <h1>회원가입</h1>
+  <div th:if="${error}" style="color: red;">
+    <p th:text="${error}"></p>
+  </div>
+  <form action="/register" method="post">
+    <label for="username">사용자 이름:</label>
+    <input type="text" id="username" name="username" required><br>
+    <label for="password">비밀번호:</label>
+    <input type="password" id="password" name="password" required><br>
+    <label for="passwordCheck">비밀번호 확인:</label>
+    <input type="password" id="passwordCheck" name="passwordCheck" required><br>
+    <button type="submit">가입하기</button>
+  </form>
+  </body>
+  </html>

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Plan List</title>
+</head>
+<body>
+<h1>Plan List</h1>
+<ul>
+    <li th:each="plan : ${plans}">
+        <span th:text="${plan.name}"></span>
+    </li>
+</ul>
+<a href="/courses/list">View Courses</a>
+</body>
+</html>
